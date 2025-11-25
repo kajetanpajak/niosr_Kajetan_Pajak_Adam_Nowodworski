@@ -32,7 +32,7 @@ class CameraSubscriber(Node):
         if ids is not None:
             cv2.aruco.drawDetectedMarkers(img, corners, ids)
 
-        cv2.imshow('camera image', img)
+        cv2.imshow('camera_image', img)
 
         cv2.waitKey(1)
 
