@@ -4,30 +4,48 @@ import rclpy # Python Client Library for ROS 2
 from rclpy.node import Node # Handles the creation of nodes
 from sensor_msgs.msg import Image # Image is the message type
 from cv_bridge import CvBridge # ROS2 package to convert between ROS and OpenCV Images
-import cv2 # Python OpenCV library
+import cv2
 
 
-def listener_callback(image_data):
-    # Convert ROS Image message to OpenCV image
-    cv_image = CvBridge().imgmsg_to_cv2(image_data,"bgr8")
-    # Display image
-    cv2.imshow("camera", cv_image)
-    # Stop to show the image
-    cv2.waitKey(1)
+class CameraSubscriber(Node):
+    def __init__(self):
+        super().__init__("camera_talker")
+
+        self.cv_bridge = CvBridge()
+        self.img_window = cv2.namedWindow("camera image")
+
+        self.aruco_dict = cv2.aruco.Dictionary_get(cv2.aruco.DICT_6X6_250)
+        self.aruco_parameters = cv2.aruco.DetectorParameters_create()
+
+        self.camera_subscription = self.create_subscription(Image, 'image_raw', self.camera_callback, 10)
+
+
+    def camera_callback(self, img_msg: Image):
+        img = self.cv_bridge.imgmsg_to_cv2(img_msg,
+                                           desired_encoding='bgr8')
+        
+        gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+        corners, ids, rejected = cv2.aruco.detectMarkers(gray_img, self.aruco_dict, parameters=self.aruco_parameters)
+
+        print(ids)
+        if ids is not None:
+            cv2.aruco.drawDetectedMarkers(img, corners, ids)
+
+        cv2.imshow('camera_image', img)
+
+        cv2.waitKey(1)
 
 def main(args=None):
     rclpy.init(args=args)
-    # Create the node
-    node = Node('camera_node')
-    # Log information into the console
-    node.get_logger().info('Hello node')
-    # Create the subscriber. This subscriber will receive an Image
-    # from the image_raw topic. The queue size is 10 messages.
-    subscription = node.create_subscription(Image,'image_raw',listener_callback,10)
-    # Spin the node so the callback function is called.
-    rclpy.spin(node)
-    # Spin the node so the callback function is called.
+
+    camera_node = CameraSubscriber()
+
+    rclpy.spin(camera_node)
+
+    camera_node.destroy_node()
+
     rclpy.shutdown()
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
