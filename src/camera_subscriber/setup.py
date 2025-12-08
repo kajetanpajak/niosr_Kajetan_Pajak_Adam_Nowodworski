@@ -24,7 +24,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            "camera_listener = camera_subscriber.camera_listener:main"
+            "camera_subscriber = camera_subscriber.camera_subscriber:main",
         ],
     },
 )
